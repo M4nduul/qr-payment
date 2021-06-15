@@ -16,28 +16,28 @@ exports.create_invoice = functions.https.onRequest(async (request, response) => 
         })
     })
 
-    qrcode.toDataURL(`${ BaseUrl }?invoiceId=${ invoice.id }/`, (err, code) => {
-        if(err) return console.log('error occurred')
+    qrcode.toDataURL(`${BaseUrl}?invoiceId=${invoice.id}/`, (err, code) => {
+        if (err) return console.log('error occurred')
 
-        response.send({ 
+        response.send({
             qr: code,
             invoiceId: invoice.id,
-         })
+        })
     })
-    
-    
-    
+
+
+
 });
 
 exports.qr_generate = functions.https.onRequest(async (request, response) => {
     const { invoiceId } = request.body
 
-    await db.doc(`invoices/${ invoiceId }`).set({
+    await db.doc(`invoices/${invoiceId}`).set({
         status: 'paid',
 
-    },{
+    }, {
         merge: true,
     })
-    
-}) 
+
+})
 
