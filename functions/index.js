@@ -34,7 +34,6 @@ exports.qr_generate = functions.https.onRequest(async (request, response) => {
 
     await db.doc(`invoices/${invoiceId}`).set({
         status: 'paid',
-
     }, {
         merge: true,
     })
