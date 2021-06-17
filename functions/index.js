@@ -20,9 +20,9 @@ exports.createInvoice = functions.https.onRequest(async (request, response) => {
             invoiceId: invoice.id,
             amount: request.body.amount,
             shopUrl: `${ BaseUrl }/shopPaymentReceived?invoiceId=${ invoice.id }/`,
-          })      
+            })      
 
-        const { qr } = invoiceRequest.data
+        const { qr } = invoiceRequest.data 
             
         response.send({ 
             qr,
@@ -41,8 +41,10 @@ exports.qrRequestToBank = functions.https.onRequest(async (request, response) =>
             shopUrl: request.body.shopUrl
         })
 
-        qrcode.toDataURL(`${ BaseUrl }/qrPaidBank?bankInvoiceId=${ bankInvoice.id }/`, (err, code) => {
+        qrcode.toDataURL(`http://192.168.0.126:3000`, (err, code) => {
             if(err) return console.log('error occurred')
+            
+            await axios.post(`${ BaseUrl }/qrPaidBank?bankInvoiceId= ${ bankInvoice.id }`, {})
             
             response.send({ 
                 qr: code,
@@ -55,17 +57,22 @@ exports.qrRequestToBank = functions.https.onRequest(async (request, response) =>
 })
 
 exports.qrPaidBank = functions.https.onRequest(async (request, response) => {       
-    const db = admin.firestore()
-    const { bankInvoiceId } = request.query
+    cors(request, response, async () => {
 
-    await db.doc(`bank_invoices/${ bankInvoiceId }`).set({
-        status: 'paid',
-    },{
-        merge: true,
+        const db = admin.firestore()
+        const { bankInvoiceId } = request.query
+
+        await db.doc(`bank_invoices/${ bankInvoiceId }`).set({
+            status: 'paid',
+        },{
+            merge: true,
+        })
+        
+        const callbackUrl = await db.doc(`bank_invoices/${ bankInvoiceId}`).get()
+        
+        await axios.post(callbackUrl.data().shopUrl, {})
+
     })
-    
-    const callbackUrl = await db.collection(`bank_invoices/${ bankInvoiceId}`).get()
-    await axios.post(callbackUrl.data().shopUrl)
     
 }) 
 
@@ -78,5 +85,5 @@ exports.shopPaymentReceived = functions.https.onRequest(async (request, response
     },{
         merge: true,
     })
-    
+   
 }) 

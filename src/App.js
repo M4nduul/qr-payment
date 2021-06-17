@@ -1,15 +1,17 @@
 import { firestore } from './firebase'
 import axios from 'axios'
+import 'materialize-css/dist/css/materialize.min.css'
+import 'materialize-css/dist/js/materialize.min.js'
 import logo from './logo.svg';
 import './App.css';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 const BaseUrl = 'https://us-central1-qr-payment-c672a.cloudfunctions.net'
 
 function App() {
   const [ qrImg, setQrImg ] = useState()
   const [ isPaid, setIsPaid ] = useState(false)
-  const [ totalAmount, setTotalAmount ] = useState(5000)
+  const [ totalAmount, setTotalAmount ] = useState(50000)
   const [ products, setProducts ] = useState({apple: 1000, milk: 4000,})
 
 
@@ -44,7 +46,8 @@ function App() {
             <img src={ qrImg ? qrImg : logo} className="App-logo" alt="logo" />
           )
         }
-        <button onClick={ onButtonClicked }>Payment</button>
+
+        <a href='#' onClick={ onButtonClicked } className="waves-effect waves-light btn-large">Click to pay</a>        
       </header>
     </div>
   );
