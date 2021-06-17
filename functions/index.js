@@ -7,6 +7,7 @@ const admin = require('firebase-admin');
 admin.initializeApp()
 
 const BaseUrl = 'https://us-central1-qr-payment-c672a.cloudfunctions.net'
+const bankReactUrl = 'https://qr-payment-c672a.web.app/'
 
 exports.createInvoice = functions.https.onRequest(async (request, response) => {
     cors(request, response, async () => {
@@ -41,7 +42,7 @@ exports.qrRequestToBank = functions.https.onRequest(async (request, response) =>
             shopUrl: request.body.shopUrl
         })
 
-        qrcode.toDataURL(`${BaseUrl}/qrPaidBank?bankInvoiceId=${bankInvoice.id}/`, (err, code) => {
+        qrcode.toDataURL(`${bankReactUrl}/?bankInvoiceId=${bankInvoice.id}`, (err, code) => {
             if (err) return console.log('error occurred')
 
             response.send({
@@ -55,23 +56,26 @@ exports.qrRequestToBank = functions.https.onRequest(async (request, response) =>
 })
 
 exports.qrPaidBank = functions.https.onRequest(async (request, response) => {
-    const db = admin.firestore()
-    const { bankInvoiceId } = request.query
+    cors(request, response, async () => {
 
-    await db.doc(`bank_invoices/${bankInvoiceId}`).set({
-        status: 'paid',
-    }, {
-        merge: true,
+        const db = admin.firestore()
+        const bankInvoiceId = request.body.bankInvoiceId
+        functions.logger.log('bankid', bankInvoiceId);
+
+        await db.doc(`bank_invoices/${bankInvoiceId}`).set({
+            status: 'paid',
+        }, {
+            merge: true,
+        })
+
+        const callbackUrl = await db.doc(`bank_invoices/${bankInvoiceId}`).get()
+
+        await axios.post(callbackUrl.data().shopUrl, {})
+
     })
 
-    functions.logger.log(bankInvoiceId);
-
-    const callbackUrl = await db.collection(`bank_invoices/${bankInvoiceId}`).get()
-    functions.logger.log(callbackUrl);
-
-    await axios.post(callbackUrl.data().shopUrl)
-
 })
+
 
 exports.shopPaymentReceived = functions.https.onRequest(async (request, response) => {
     const db = admin.firestore()
